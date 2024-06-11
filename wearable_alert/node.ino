@@ -58,7 +58,28 @@ bool isKnownMACAddress(const String& macAddress) {
     return false;
 }
 
-// TODO: to create a function "getHighestStrengthWiFi"
+String getHighestStrengthWiFi() {
+    Serial.println("Scanning for WiFi networks...");
+    int n = WiFi.scanNetworks();
+    int maxRSSI = -1000;  // Set to a very low value initially
+    String bestSSID = "";
+    for (int i = 0; i < n; ++i) {
+        String currentMAC = WiFi.BSSIDstr(i);
+        if (isKnownMACAddress(currentMAC) && WiFi.RSSI(i) > maxRSSI) {
+            maxRSSI = WiFi.RSSI(i);
+            bestSSID = WiFi.SSID(i);
+        }
+    }
+    if (bestSSID != "") {
+        Serial.print("Best NodeMCU WiFi: ");
+        Serial.print(bestSSID);
+        Serial.print(" with RSSI: ");
+        Serial.println(maxRSSI);
+    } else {
+        Serial.println("No known NodeMCU devices found.");
+    }
+    return bestSSID;
+}
 
 void connectToMQTT() {
     int8_t ret;
@@ -83,4 +104,23 @@ void uploadJSONDataToAdafruitIO(const String& wifiName) {
     } else {
         Serial.println("Successfully published to Adafruit IO");
     }
+}
+
+void setup() {
+    Serial.begin(115200);
+    connectToWiFi(Configs);
+    pinMode(Configs.pin, INPUT_PULLUP);
+}
+
+void loop() {
+    if (digitalRead(Configs.pin) == Configs.state) {
+        String highestStrengthWiFi = getHighestStrengthWiFi();
+        if (highestStrengthWiFi != "") {
+            uploadJSONDataToAdafruitIO(highestStrengthWiFi);
+        } else {
+            Serial.println("No known NodeMCU WiFi networks to upload.");
+        }
+    }
+    mqtt.processPackets(10000);  // Allow the MQTT client to process incoming packets
+    mqtt.ping();                 // Keep the connection alive
 }
