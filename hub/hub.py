@@ -1,4 +1,5 @@
 import requests
+from smtp_util import SendMail
 from Adafruit_IO import Client, Data
 
 
@@ -13,10 +14,10 @@ def get_position_from_server(api_endpoint):
     try:
         wifi_name = aio.receive(feed)
         if wifi_name:
-            print(f"WiFi Name from server: {wifi_name}")
-            # TODO: Add Email alert code
+            print(f"position from server: {wifi_name}")
+            SendMail(wifi_name)
         else:
-            print("WiFi name not found in the server response.")
+            print("position not found in the server response.")
     except Exception as err:
         print(f"An error occurred: {err}")
 
