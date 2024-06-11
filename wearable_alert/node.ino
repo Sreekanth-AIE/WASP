@@ -57,3 +57,30 @@ bool isKnownMACAddress(const String& macAddress) {
     }
     return false;
 }
+
+// TODO: to create a function "getHighestStrengthWiFi"
+
+void connectToMQTT() {
+    int8_t ret;
+    // Stop if already connected
+    if (mqtt.connected()) {
+        return;
+    }
+    Serial.print("Connecting to MQTT... ");
+    while ((ret = mqtt.connect()) != 0) {
+        Serial.println(mqtt.connectErrorString(ret));
+        Serial.println("Retrying MQTT connection in 5 seconds...");
+        mqtt.disconnect();
+        delay(5000);
+    }
+    Serial.println("MQTT Connected!");
+}
+
+void uploadJSONDataToAdafruitIO(const String& wifiName) {
+    connectToMQTT();
+    if (!wifiNameFeed.publish(wifiName.c_str())) {
+        Serial.println("Failed to publish to Adafruit IO");
+    } else {
+        Serial.println("Successfully published to Adafruit IO");
+    }
+}
